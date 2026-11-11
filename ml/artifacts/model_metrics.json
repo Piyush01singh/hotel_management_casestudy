@@ -1,0 +1,164 @@
+{
+  "trained_timestamp": "2026-11-06T14:57:43.574047",
+  "evaluation_period": {
+    "train_start": "2023-03-02",
+    "train_end": "2024-01-24",
+    "val_start": "2024-01-25",
+    "val_end": "2024-05-13",
+    "test_start": "2024-05-14",
+    "test_end": "2024-08-31"
+  },
+  "sample_sizes": {
+    "train": 18060,
+    "val": 6160,
+    "test": 5796
+  },
+  "overall_models": {
+    "seasonal_naive": {
+      "mae": 3.451,
+      "rmse": 5.417,
+      "wape": 12.25
+    },
+    "ridge_regression": {
+      "mae": 1.861,
+      "rmse": 2.758,
+      "wape": 6.61
+    },
+    "staywise_xgboost": {
+      "mae": 1.318,
+      "rmse": 1.939,
+      "wape": 4.68
+    }
+  },
+  "by_room_category": {
+    "STD": {
+      "xgb": {
+        "mae": 1.97,
+        "rmse": 2.725,
+        "wape": 3.49
+      },
+      "ridge": {
+        "mae": 3.198,
+        "rmse": 4.291,
+        "wape": 5.66
+      },
+      "naive": {
+        "mae": 6.307,
+        "rmse": 8.675,
+        "wape": 11.16
+      },
+      "count": 1449
+    },
+    "DLX": {
+      "xgb": {
+        "mae": 1.357,
+        "rmse": 1.98,
+        "wape": 4.07
+      },
+      "ridge": {
+        "mae": 1.709,
+        "rmse": 2.495,
+        "wape": 5.12
+      },
+      "naive": {
+        "mae": 3.333,
+        "rmse": 4.922,
+        "wape": 9.99
+      },
+      "count": 1449
+    },
+    "SUI": {
+      "xgb": {
+        "mae": 1.187,
+        "rmse": 1.598,
+        "wape": 7.73
+      },
+      "ridge": {
+        "mae": 1.295,
+        "rmse": 1.749,
+        "wape": 8.43
+      },
+      "naive": {
+        "mae": 2.647,
+        "rmse": 3.675,
+        "wape": 17.23
+      },
+      "count": 1449
+    },
+    "EXE": {
+      "xgb": {
+        "mae": 0.76,
+        "rmse": 1.067,
+        "wape": 10.29
+      },
+      "ridge": {
+        "mae": 1.242,
+        "rmse": 1.653,
+        "wape": 16.8
+      },
+      "naive": {
+        "mae": 1.516,
+        "rmse": 2.089,
+        "wape": 20.51
+      },
+      "count": 1449
+    }
+  },
+  "by_forecast_horizon": {
+    "1_7_days": {
+      "xgb": {
+        "mae": 0.974,
+        "rmse": 1.426,
+        "wape": 3.45
+      },
+      "ridge": {
+        "mae": 1.536,
+        "rmse": 2.148,
+        "wape": 5.44
+      },
+      "naive": {
+        "mae": 3.31,
+        "rmse": 5.163,
+        "wape": 11.71
+      }
+    },
+    "8_14_days": {
+      "xgb": {
+        "mae": 1.641,
+        "rmse": 2.318,
+        "wape": 5.85
+      },
+      "ridge": {
+        "mae": 2.165,
+        "rmse": 3.225,
+        "wape": 7.71
+      },
+      "naive": {
+        "mae": 3.582,
+        "rmse": 5.643,
+        "wape": 12.77
+      }
+    }
+  },
+  "feature_columns": [
+    "lead_time",
+    "day_of_week",
+    "is_weekend",
+    "month",
+    "event_impact_score",
+    "otb_rooms",
+    "otb_cancellations",
+    "pickup_1d",
+    "pickup_7d",
+    "otb_occupancy_ratio",
+    "cancellation_rate_otb",
+    "hist_same_dow_lag",
+    "hist_rolling_mean_7d",
+    "hist_rolling_mean_28d",
+    "room_capacity",
+    "category_STD",
+    "category_DLX",
+    "category_SUI",
+    "category_EXE"
+  ]
+}

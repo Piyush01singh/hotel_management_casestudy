@@ -1,0 +1,36 @@
+{
+  "hotel_id": "HOTEL_01",
+  "name": "Grand Azure Resort & Spa",
+  "total_rooms": 140,
+  "city": "Monterey Bay",
+  "categories": {
+    "STD": {
+      "name": "Standard King/Twin",
+      "capacity": 70,
+      "base_rate": 160.0,
+      "clean_dep": 30,
+      "clean_stay": 15
+    },
+    "DLX": {
+      "name": "Deluxe Ocean View",
+      "capacity": 40,
+      "base_rate": 240.0,
+      "clean_dep": 35,
+      "clean_stay": 18
+    },
+    "SUI": {
+      "name": "Executive Suite",
+      "capacity": 20,
+      "base_rate": 390.0,
+      "clean_dep": 45,
+      "clean_stay": 25
+    },
+    "EXE": {
+      "name": "Presidential Penthouse",
+      "capacity": 10,
+      "base_rate": 650.0,
+      "clean_dep": 60,
+      "clean_stay": 30
+    }
+  }
+}
