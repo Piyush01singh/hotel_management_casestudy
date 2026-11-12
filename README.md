@@ -37,8 +37,8 @@ Evaluated on strictly chronological, untouched test stay dates (5,796 observatio
 | Model Name | MAE (Rooms) | RMSE (Rooms) | WAPE (%) | Performance Delta vs. Baseline |
 |---|---|---|---|---|
 | **Seasonal-Naive Baseline** | 3.451 | 5.417 | 12.25% | *Reference Baseline* |
-| **Ridge Regression** | 1.861 | 2.758 | 6.61% | **46.1% relative WAPE reduction** |
-| **StayWise AI (XGBoost)** | **1.318** | **1.939** | **4.68%** | **61.8% relative WAPE reduction** |
+| **Ridge Regression** | 1.861 | 2.758 | 6.61% | **46.0% relative WAPE reduction** |
+| **StayWise AI (XGBoost)** | **1.316** | **1.937** | **4.67%** | **61.9% relative WAPE reduction** |
 
 ---
 
@@ -106,7 +106,7 @@ Open `http://localhost:3000` in your browser.
 ## 📁 Repository Structure
 
 ```
-D:\piyush_aiproject
+hotel_management_casestudy/
 │
 ├── frontend/                     # Next.js 14+ SaaS Frontend
 │   ├── app/                      # App router pages (Command Center, Forecast, Replay, etc.)
@@ -126,16 +126,17 @@ D:\piyush_aiproject
 │
 ├── ml/                           # Machine Learning Pipeline
 │   ├── data/                     # Raw, processed, and synthetic datasets
+│   ├── notebooks/                # Executed end-to-end evidence notebook (.ipynb)
 │   ├── src/                      # Generation, feature engineering, training, EDA
 │   ├── artifacts/                # Serialized models, TreeSHAP, metrics, uncertainty intervals
 │   └── requirements.txt
 │
 ├── tests/
-│   ├── unit/                     # ML pipeline and uncertainty unit tests
+│   ├── unit/                     # ML pipeline, parity, PII, and leakage unit tests
 │   ├── integration/              # FastAPI endpoint integration tests
 │   └── e2e/                      # Playwright end-to-end browser tests
 │
-├── docs/                         # Technical Documentation Suite
+├── docs/                         # Technical Documentation & Interview Summary PDF
 │   ├── PRD.md                    # Product Requirements Document
 │   ├── TRD.md                    # Technical Requirements Document
 │   ├── COMPETITOR_ANALYSIS.md    # Industry benchmarking (Duetto, IDeaS, Atomize, Lighthouse)
@@ -146,9 +147,11 @@ D:\piyush_aiproject
 │   ├── TECHNICAL_REPORT.md       # Comprehensive Engineering & ML Report
 │   ├── TEST_REPORT.md            # Test execution records
 │   ├── INSTALLED_SKILLS.md       # Installed tools & environment registry
-│   └── DEMO_SCRIPT.md            # 3–5 minute demonstration script
+│   ├── DEMO_SCRIPT.md            # 3–5 minute demonstration script
+│   └── StayWise_AI_Interview_Summary.pdf  # Concise interview-ready project summary
 │
 ├── graphify-out/                 # Knowledge Graph & Community Extraction
+├── pytest.ini                    # Pytest root configuration
 ├── SUBMISSION_CHECKLIST.md       # 100-mark assessment verification checklist
 └── README.md
 ```

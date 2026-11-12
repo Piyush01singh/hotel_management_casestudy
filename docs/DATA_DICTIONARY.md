@@ -47,8 +47,8 @@ Pre-aggregated daily snapshots at 23:59:59 cutoff date:
 | `stay_date` | DATE | The future stay date $d \ge t_0 + 1$. |
 | `room_category` | VARCHAR(32) | Room category code. |
 | `lead_time` | INTEGER | $d - t_0$ (days to arrival). |
-| `otb_confirmed` | INTEGER | Count of active non-cancelled bookings made $\le t_0$ with stay date $d$. |
-| `otb_cancelled` | INTEGER | Count of cancellations received $\le t_0$ for stay date $d$. |
+| `otb_rooms` | INTEGER | Count of active non-cancelled bookings made $\le t_0$ with stay date $d$ (clamped to capacity). |
+| `otb_cancellations` | INTEGER | Count of cancellations received $\le t_0$ for stay date $d$. |
 | `pickup_1d` | INTEGER | Net new bookings created on day $t_0$ for date $d$. |
 | `pickup_7d` | INTEGER | Net new bookings created in $[t_0 - 6, t_0]$ for date $d$. |
 
@@ -64,27 +64,27 @@ Pre-aggregated daily snapshots at 23:59:59 cutoff date:
 
 ---
 
-## 2. Machine Learning Feature Matrix
+## 2. Machine Learning Feature Matrix (19 Model Input Features + Target)
 
 | Feature Name | Type | Source | Availability Cutoff | Formula / Logic |
 |---|---|---|---|---|
-| `lead_time` | INTEGER | Snapshot | Known at $t_0$ | `stay_date - snapshot_date` |
-| `day_of_week` | INTEGER (0-6) | Calendar | Known at $t_0$ | `stay_date.weekday()` |
-| `is_weekend` | BOOLEAN | Calendar | Known at $t_0$ | 1 if day in (4, 5) else 0 |
-| `month` | INTEGER (1-12) | Calendar | Known at $t_0$ | `stay_date.month` |
-| `is_holiday` | BOOLEAN | Calendar | Known at $t_0$ | National/regional holiday match |
-| `event_impact_score` | FLOAT | Calendar | Known at $t_0$ | Local convention or festival demand uplift multiplier |
-| `otb_rooms` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | Bookings confirmed $\le t_0$ without cancellation $\le t_0$ |
+| `lead_time` | INTEGER | Snapshot | Known at $t_0$ | `stay_date - snapshot_date` (1–14 days) |
+| `day_of_week` | INTEGER (0–6) | Calendar | Known at $t_0$ | `stay_date.weekday()` |
+| `is_weekend` | BINARY | Calendar | Known at $t_0$ | `1` if Friday (4) or Saturday (5), else `0` |
+| `month` | INTEGER (1–12) | Calendar | Known at $t_0$ | `stay_date.month` |
+| `event_impact_score` | FLOAT | Calendar | Known at $t_0$ | Holiday/local-event demand uplift multiplier (`1.0` baseline, up to `1.75`) |
+| `otb_rooms` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | Bookings created $\le t_0$ without cancellation $\le t_0$ |
 | `otb_cancellations` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | Cancellations processed $\le t_0$ |
-| `pickup_1d` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | $\text{otb}(t_0) - \text{otb}(t_0 - 1)$ |
-| `pickup_7d` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | $\text{otb}(t_0) - \text{otb}(t_0 - 7)$ |
-| `hist_lag_7d` | INTEGER | Actuals | As of $t_0$ 23:59:59 | Realized occupancy for category on $t_0 - 6$ (stay date $d - 7$) |
-| `hist_lag_14d` | INTEGER | Actuals | As of $t_0$ 23:59:59 | Realized occupancy for category on $t_0 - 13$ |
-| `hist_rolling_mean_7d` | FLOAT | Actuals | As of $t_0$ 23:59:59 | Mean daily occupancy for category in $[t_0 - 6, t_0]$ |
-| `hist_rolling_mean_28d` | FLOAT | Actuals | As of $t_0$ 23:59:59 | Mean daily occupancy for category in $[t_0 - 27, t_0]$ |
-| `room_capacity` | INTEGER | Metadata | Fixed physical constant | Total rooms in category |
-| `category_STD` | BINARY | One-Hot | Fixed | 1 if Standard, else 0 |
-| `category_DLX` | BINARY | One-Hot | Fixed | 1 if Deluxe, else 0 |
-| `category_SUI` | BINARY | One-Hot | Fixed | 1 if Suite, else 0 |
-| `category_EXE` | BINARY | One-Hot | Fixed | 1 if Executive, else 0 |
-| **`target_occupied_rooms`** | INTEGER | Target ($y$) | Evaluated post-stay | Ground truth rooms occupied on `stay_date` |
+| `pickup_1d` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | Net active bookings created on day $t_0$ for stay date $d$ |
+| `pickup_7d` | INTEGER | Snapshot | As of $t_0$ 23:59:59 | Net active bookings created in $[t_0 - 6, t_0]$ for stay date $d$ |
+| `otb_occupancy_ratio` | FLOAT | Derived | As of $t_0$ 23:59:59 | `clip(otb_rooms / room_capacity, 0.0, 1.0)` |
+| `cancellation_rate_otb` | FLOAT | Derived | As of $t_0$ 23:59:59 | `otb_cancellations / (otb_rooms + otb_cancellations + 1e-4)` |
+| `hist_same_dow_lag` | FLOAT | Actuals | Stay dates $\le t_0$ | Most recent realized occupancy for same category & weekday $\le t_0$ |
+| `hist_rolling_mean_7d` | FLOAT | Actuals | Stay dates $\le t_0$ | 7-day rolling mean realized occupancy for category as of $t_0$ |
+| `hist_rolling_mean_28d` | FLOAT | Actuals | Stay dates $\le t_0$ | 28-day rolling mean realized occupancy for category as of $t_0$ |
+| `room_capacity` | INTEGER | Metadata | Fixed physical constant | Total rooms in category (`STD=70, DLX=40, SUI=20, EXE=10`) |
+| `category_STD` | BINARY | One-Hot | Fixed | `1` if Standard, else `0` |
+| `category_DLX` | BINARY | One-Hot | Fixed | `1` if Deluxe, else `0` |
+| `category_SUI` | BINARY | One-Hot | Fixed | `1` if Suite, else `0` |
+| `category_EXE` | BINARY | One-Hot | Fixed | `1` if Executive, else `0` |
+| **`target_occupied_rooms`** | INTEGER | Target ($y$) | Evaluated post-stay | Ground-truth occupied rooms on `stay_date` |

@@ -51,31 +51,59 @@ A deterministic synthetic generator was developed based on empirical hospitality
 | Model Name | MAE (Rooms) | RMSE (Rooms) | WAPE (%) | Performance Delta vs. Baseline |
 |---|---|---|---|---|
 | **Seasonal-Naive Baseline** | 3.451 | 5.417 | 12.25% | *Reference Baseline* |
-| **Ridge Regression** | 1.861 | 2.758 | 6.61% | **46.1% relative WAPE reduction** |
-| **StayWise AI (XGBoost)** | **1.318** | **1.939** | **4.68%** | **61.8% relative WAPE reduction** |
+| **Ridge Regression** | 1.861 | 2.758 | 6.61% | **46.0% relative WAPE reduction** |
+| **StayWise AI (XGBoost)** | **1.316** | **1.937** | **4.67%** | **61.9% relative WAPE reduction** |
+
+### 3.3 Error Breakdown by Room Category & Forecast Horizon (XGBoost)
+- **By Category (MAE / RMSE / WAPE):**
+  - `STD` (Cap 70): `1.954` / `2.708` / `3.46%` (vs. Baseline WAPE `11.16%`)
+  - `DLX` (Cap 40): `1.355` / `1.976` / `4.06%` (vs. Baseline WAPE `9.99%`)
+  - `SUI` (Cap 20): `1.189` / `1.609` / `7.74%` (vs. Baseline WAPE `17.23%`)
+  - `EXE` (Cap 10): `0.767` / `1.089` / `10.37%` (vs. Baseline WAPE `20.51%`) — smaller room pools have higher percentage variance (`WAPE`) even when absolute error is < 1 room.
+- **By Forecast Horizon:**
+  - **1–7 Days Ahead:** `MAE = 0.974`, `RMSE = 1.434`, `WAPE = 3.45%`
+  - **8–14 Days Ahead:** `MAE = 1.637`, `RMSE = 2.310`, `WAPE = 5.83%`
 
 ---
 
 ## 4. Uncertainty Quantification & Interval Calibration
 
-To provide risk boundaries for revenue and operational leaders, StayWise AI quantifies prediction uncertainty using empirical validation error quantiles stratified across lead-time horizons:
-- **Short Horizon (1–3 Days):** 80% interval $[-1.87, +1.92]$ rooms | **83.4% empirical test coverage**
-- **Medium Horizon (4–7 Days):** 80% interval $[-2.14, +2.28]$ rooms | **81.6% empirical test coverage**
-- **Long Horizon (8–14 Days):** 80% interval $[-2.65, +2.81]$ rooms | **78.9% empirical test coverage**
+To provide risk boundaries for revenue and operational leaders, StayWise AI quantifies prediction uncertainty using empirical validation error residuals ($y_{\text{val}} - \hat{y}_{\text{val}}$) stratified across lead-time horizons:
+- **Short Horizon (1–3 Days):** 80% interval $[-1.229, +1.141]$ rooms | **83.84% empirical test coverage** (95% cov: 94.22%)
+- **Medium Horizon (4–7 Days):** 80% interval $[-1.895, +2.239]$ rooms | **80.91% empirical test coverage** (95% cov: 96.67%)
+- **Long Horizon (8–14 Days):** 80% interval $[-2.569, +3.474]$ rooms | **82.04% empirical test coverage** (95% cov: 97.76%)
 
 95% intervals are also computed and bounded between $[0, \text{Capacity}_k]$.
 
 ---
 
-## 5. Model Explainability via TreeSHAP
+## 5. Model Explainability via TreeSHAP & Error Case Analysis
 
-Model transparency is provided through exact TreeSHAP attributions computed via the XGBoost C++ engine:
-1. **`hist_same_dow_lag` (0.648 rooms impact):** Strongest baseline anchor for recurring weekly rhythms.
-2. **`otb_rooms` (0.582 rooms impact):** Primary volume driver as lead time converges towards arrival.
-3. **`room_capacity` (0.514 rooms impact):** Structural ceiling enforcing room category scale.
-4. **`lead_time` (0.342 rooms impact):** Non-linear decay factor regulating pickup expectations.
-5. **`event_impact_score` (0.285 rooms impact):** Multiplier for conventions and holiday festivals.
-6. **`otb_occupancy_ratio` (0.210 rooms impact):** Pace velocity indicator.
+### 5.1 Global Feature Attributions (Mean $|$SHAP$|$ across Held-Out Test Sample)
+Model transparency is provided through exact TreeSHAP attributions computed via the XGBoost C++ booster (`pred_contribs=True`, `iteration_range=(0, best_iteration+1)`):
+1. **`otb_rooms` (12.858 rooms impact):** Primary volume driver reflecting confirmed reservations on the books as of $t_0$.
+2. **`lead_time` (1.733 rooms impact):** Regulates expected remaining booking pickup and cancellation wash before arrival.
+3. **`hist_rolling_mean_28d` (1.623 rooms impact):** Captures medium-term seasonal demand baseline strictly from stay dates $\le t_0$.
+4. **`hist_same_dow_lag` (1.382 rooms impact):** Recurring day-of-week anchor from realized occupancy $\le t_0$.
+5. **`hist_rolling_mean_7d` (0.704 rooms impact):** Short-term momentum signal as of cutoff $t_0$.
+6. **`day_of_week` (0.512 rooms impact)** & **`event_impact_score` (0.357 rooms impact):** Capture leisure weekend peaks and holiday/festival demand spikes.
+
+### 5.2 Single-Prediction & High-Error Case Walkthrough (`sample_prediction_explanation.json`)
+- **Representative Prediction (`t0 = 2024-06-19` $\rightarrow$ `stay_date = 2024-07-03`, `EXE`, `lead_time = 14d`, Capacity `10`):**
+  - **Actual:** `10` rooms | **Predicted:** `9.17` rooms (`abs_error = 0.83`), inside 80% CI `[6.6, 10.0]`.
+  - **Explanation:** From the global SHAP base value of `22.70`, `otb_rooms = 7` pulls down `-12.42` (reflecting EXE's 10-room scale), while pre-July 4th `event_impact_score = 1.36` (`+1.63`) and `lead_time = 14` (`+1.92`) lift the forecast toward full capacity.
+- **Highest-Error Held-Out Case (`t0 = 2024-06-07` $\rightarrow$ `stay_date = 2024-06-20`, `STD`, `lead_time = 13d`, Capacity `70`):**
+  - **Actual:** `35` rooms | **Predicted:** `46.26` rooms (`abs_error = 11.26`), outside 80% CI `[43.7, 49.7]`.
+  - **Why it missed:** At `t0 = 2024-06-07` (13 days out), `otb_rooms` was `28`, while `hist_rolling_mean_28d` (`57.36`) and `hist_same_dow_lag` (`50.0`) were elevated from prior early-summer weeks. The model projected `+18` additional net rooms over the remaining 13 days (`lead_time +5.64`, `hist_rolling_mean_28d +3.92`, `hist_same_dow_lag +3.27`), whereas realized demand stayed soft at `35` due to slower pickup and post-cutoff wash. This illustrates why long-lead predictions carry wider uncertainty bands and require human revenue review.
+
+---
+
+## 6. Outlier Handling, Representativeness, Bias, Privacy & Human Oversight
+
+1. **Outlier & Boundary Handling:** Synthetic and historical booking counts are validated for non-negativity (`occupied_rooms >= 0`), lead-time clipping (`0 <= lead_time_days <= 180`), and strict physical capacity clamping ($0 \le \hat{y} \le \text{Capacity}_k$).
+2. **Representativeness & Bias:** Trained on a single 140-key coastal resort profile with Fri/Sat leisure peaks and specific local events; transfer to urban business hotels or ski resorts requires localized retraining and calendar recalibration.
+3. **Privacy & Security:** Zero guest PII (`name`, `email`, `phone`, `payment`) is ingested or retained; only aggregate room counts are stored.
+4. **Failure Modes & Human-in-the-Loop Governance:** StayWise AI is strictly a **decision-support** tool. Unmodeled macro shocks, sudden group block cancellations after $t_0$, or unrecorded room-wing closures degrade accuracy; Scenario Studio and Operations Planner require human manager confirmation before finalizing rosters or pricing.
 
 ---
 

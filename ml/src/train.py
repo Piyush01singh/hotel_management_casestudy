@@ -115,13 +115,15 @@ def train_and_evaluate(base_data_dir: str, artifacts_dir: str, docs_dir: str):
     pred_ridge_test = np.clip(ridge_model.predict(X_test_scaled), 0, cap_test)
     metrics_ridge = compute_metrics(y_test, pred_ridge_test)
 
-    # 3. XGBoost Regressor
+    # 3. XGBoost Regressor with validation early stopping
     xgb_model = xgb.XGBRegressor(
-        n_estimators=180,
+        n_estimators=250,
         max_depth=5,
         learning_rate=0.06,
         subsample=0.85,
         colsample_bytree=0.85,
+        early_stopping_rounds=25,
+        eval_metric="rmse",
         random_state=RANDOM_SEED,
         n_jobs=-1
     )
@@ -140,7 +142,7 @@ def train_and_evaluate(base_data_dir: str, artifacts_dir: str, docs_dir: str):
     print(f"StayWise AI (XGBoost)   : MAE={metrics_xgb['mae']:.3f}, RMSE={metrics_xgb['rmse']:.3f}, WAPE={metrics_xgb['wape']:.2f}%")
 
     # 4. Error Breakdown by Category and Forecast Horizon (for XGBoost)
-    test_eval_df = test_df.copy()
+    test_eval_df = test_df.reset_index(drop=True).copy()
     test_eval_df["y_true"] = y_test
     test_eval_df["y_pred_xgb"] = pred_xgb_test
     test_eval_df["y_pred_ridge"] = pred_ridge_test
@@ -220,9 +222,10 @@ def train_and_evaluate(base_data_dir: str, artifacts_dir: str, docs_dir: str):
     sample_indices = np.random.choice(len(X_test), size=sample_size, replace=False)
     X_shap_sample = X_test[sample_indices]
     
-    # Native exact TreeSHAP computation
+    # Native exact TreeSHAP computation matching early-stopped booster trees
+    iter_range = (0, xgb_model.best_iteration + 1) if getattr(xgb_model, "best_iteration", None) is not None else None
     dmatrix_sample = xgb.DMatrix(X_shap_sample)
-    contribs = xgb_model.get_booster().predict(dmatrix_sample, pred_contribs=True)
+    contribs = xgb_model.get_booster().predict(dmatrix_sample, pred_contribs=True, iteration_range=iter_range)
     # The last column is the base expected value, preceding columns are feature contributions
     shap_vals = contribs[:, :-1]
     mean_abs_shap = np.mean(np.abs(shap_vals), axis=0)
@@ -276,6 +279,62 @@ def train_and_evaluate(base_data_dir: str, artifacts_dir: str, docs_dir: str):
 
     with open(os.path.join(artifacts_dir, "test_predictions_sample.json"), "w", encoding="utf-8") as f:
         json.dump(sample_test_records, f, indent=2)
+
+    # Generate concrete single-prediction & error case study via exact TreeSHAP
+    test_eval_df["abs_error"] = np.abs(test_eval_df["y_true"] - test_eval_df["y_pred_xgb"])
+    typical_idx = int((test_eval_df["abs_error"] - test_eval_df["abs_error"].median()).abs().idxmin())
+    worst_idx = int(test_eval_df["abs_error"].idxmax())
+
+    def build_local_explanation(row_pos: int, label: str) -> Dict[str, Any]:
+        row = test_eval_df.iloc[row_pos]
+        x_row = X_test[row_pos : row_pos + 1]
+        contrib = xgb_model.get_booster().predict(
+            xgb.DMatrix(x_row), pred_contribs=True, iteration_range=iter_range
+        )[0]
+        base_val = float(contrib[-1])
+        feat_contribs = {
+            col: round(float(val), 4)
+            for col, val in zip(FEATURE_COLS, contrib[:-1])
+        }
+        sorted_contribs = dict(
+            sorted(feat_contribs.items(), key=lambda item: abs(item[1]), reverse=True)
+        )
+        lead = int(row["lead_time"])
+        bucket_key = "short_1_3d" if lead <= 3 else ("medium_4_7d" if lead <= 7 else "long_8_14d")
+        u_info = uncertainty_calibrations[bucket_key]
+        pred_clamped = float(row["y_pred_xgb"])
+        cap_val = int(row["room_capacity"])
+        low_80 = float(np.clip(round(pred_clamped + u_info["q80"]["lower_offset"], 1), 0, cap_val))
+        high_80 = float(np.clip(round(pred_clamped + u_info["q80"]["upper_offset"], 1), 0, cap_val))
+        return {
+            "case_type": label,
+            "snapshot_date": str(row["snapshot_date"]),
+            "stay_date": str(row["stay_date"]),
+            "room_category": str(row["room_category"]),
+            "lead_time": lead,
+            "room_capacity": cap_val,
+            "actual_occupied_rooms": int(row["y_true"]),
+            "predicted_occupied_rooms": round(pred_clamped, 2),
+            "absolute_error": round(float(row["abs_error"]), 2),
+            "uncertainty_80_interval": [low_80, high_80],
+            "within_80_interval": bool(low_80 <= int(row["y_true"]) <= high_80),
+            "shap_base_value": round(base_val, 4),
+            "raw_model_output": round(float(base_val + sum(contrib[:-1])), 4),
+            "feature_values": {col: round(float(row[col]), 4) for col in FEATURE_COLS},
+            "shap_contributions_sorted": sorted_contribs,
+        }
+
+    local_explanations = {
+        "typical_prediction_case": build_local_explanation(typical_idx, "Representative Held-Out Test Prediction"),
+        "high_error_case": build_local_explanation(worst_idx, "Highest-Error Held-Out Test Case"),
+        "limitations_note": (
+            "Forecast uncertainty widens with booking lead time because late reservations and last-minute "
+            "cancellations have not yet materialized at cutoff t0. Sudden unmodeled demand shocks or "
+            "capacity changes outside historical patterns can fall outside the 80% empirical residual band."
+        ),
+    }
+    with open(os.path.join(artifacts_dir, "sample_prediction_explanation.json"), "w", encoding="utf-8") as f:
+        json.dump(local_explanations, f, indent=2)
 
     print("Model artifacts successfully saved!")
 

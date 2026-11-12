@@ -13,6 +13,7 @@ from backend.app.schemas.forecast_schemas import (
     ForecastRequest, ForecastResponse, PredictionPoint,
     ForecastComparisonResponse, ForecastComparisonItem
 )
+from ml.src.feature_engineering import get_event_impact
 
 class ForecastService:
     def __init__(self):
@@ -89,12 +90,17 @@ class ForecastService:
         meta_rows = []
         dow_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-        # Cache actuals for lag retrieval
+        # Cache actuals strictly <= cutoff for lag and rolling-mean parity with training
+        lookback_start = cutoff - datetime.timedelta(days=35)
         recent_actuals = db.query(OccupancyActual).filter(
-            OccupancyActual.stay_date <= cutoff
-        ).order_by(OccupancyActual.stay_date.desc()).limit(120).all()
+            OccupancyActual.stay_date <= cutoff,
+            OccupancyActual.stay_date >= lookback_start
+        ).order_by(OccupancyActual.stay_date.asc()).all()
 
         actuals_by_date_cat = {(a.stay_date, a.room_category): a.occupied_rooms for a in recent_actuals}
+        actuals_series_by_cat: Dict[str, List[int]] = {}
+        for a in recent_actuals:
+            actuals_series_by_cat.setdefault(a.room_category, []).append(a.occupied_rooms)
 
         for s in snapshots:
             stay_dt = s.stay_date
@@ -102,24 +108,26 @@ class ForecastService:
             is_wknd = 1 if dow in (4, 5) else 0
             m = stay_dt.month
             cap = s.room_capacity
+            event_score = get_event_impact(stay_dt)
 
-            # Lag: same DOW
+            # Lag: same DOW <= cutoff
             days_back = (cutoff.weekday() - dow) % 7
             if days_back == 0:
                 days_back = 7
             target_lag_date = cutoff - datetime.timedelta(days=days_back)
-            same_dow_lag = float(actuals_by_date_cat.get((target_lag_date, s.room_category), cap * 0.72))
+            same_dow_lag = float(actuals_by_date_cat.get((target_lag_date, s.room_category), cap * 0.7))
 
-            # Approximate rolling means
-            roll7 = float(cap * 0.73)
-            roll28 = float(cap * 0.72)
+            # Exact rolling 7d and 28d means from historical actuals <= cutoff
+            cat_hist = actuals_series_by_cat.get(s.room_category, [])
+            roll7 = float(np.mean(cat_hist[-7:])) if cat_hist else float(cap * 0.7)
+            roll28 = float(np.mean(cat_hist[-28:])) if cat_hist else float(cap * 0.7)
 
             f_vector = [
                 s.lead_time,
                 dow,
                 is_wknd,
                 m,
-                1.0,  # event_impact_score
+                event_score,
                 s.otb_rooms,
                 s.otb_cancellations,
                 s.pickup_1d,
@@ -136,7 +144,7 @@ class ForecastService:
                 1 if s.room_category == "EXE" else 0,
             ]
             feature_rows.append(f_vector)
-            meta_rows.append((s, dow_names[dow], bool(is_wknd)))
+            meta_rows.append((s, dow_names[dow], bool(is_wknd), event_score))
 
         if len(feature_rows) == 0:
             return ForecastResponse(
@@ -169,7 +177,7 @@ class ForecastService:
         total_possible_nights = 0.0
         pressure_alerts = 0
 
-        for i, (s, dow_str, is_wknd) in enumerate(meta_rows):
+        for i, (s, dow_str, is_wknd, event_score) in enumerate(meta_rows):
             cap = s.room_capacity
             # Double bound clipping
             pred_rooms = float(np.clip(raw_preds[i], 0.0, cap))
@@ -218,7 +226,7 @@ class ForecastService:
                 uncertainty_95_lower=u95_l,
                 uncertainty_95_upper=u95_u,
                 risk_level=risk,
-                event_impact_score=1.0
+                event_impact_score=round(event_score, 2)
             ))
 
             total_pred_nights += pred_rooms

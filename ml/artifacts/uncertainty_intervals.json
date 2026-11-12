@@ -5,14 +5,14 @@
       3
     ],
     "q80": {
-      "lower_offset": -1.216,
-      "upper_offset": 1.129,
-      "test_coverage_pct": 82.57
+      "lower_offset": -1.229,
+      "upper_offset": 1.141,
+      "test_coverage_pct": 83.84
     },
     "q95": {
-      "lower_offset": -2.277,
-      "upper_offset": 2.321,
-      "test_coverage_pct": 95.83
+      "lower_offset": -2.244,
+      "upper_offset": 2.119,
+      "test_coverage_pct": 94.22
     }
   },
   "medium_4_7d": {
@@ -21,14 +21,14 @@
       7
     ],
     "q80": {
-      "lower_offset": -1.862,
-      "upper_offset": 2.309,
-      "test_coverage_pct": 81.16
+      "lower_offset": -1.895,
+      "upper_offset": 2.239,
+      "test_coverage_pct": 80.91
     },
     "q95": {
-      "lower_offset": -4.121,
-      "upper_offset": 4.254,
-      "test_coverage_pct": 97.41
+      "lower_offset": -4.159,
+      "upper_offset": 4.056,
+      "test_coverage_pct": 96.67
     }
   },
   "long_8_14d": {
@@ -37,14 +37,14 @@
       14
     ],
     "q80": {
-      "lower_offset": -2.579,
-      "upper_offset": 3.479,
-      "test_coverage_pct": 82.84
+      "lower_offset": -2.569,
+      "upper_offset": 3.474,
+      "test_coverage_pct": 82.04
     },
     "q95": {
-      "lower_offset": -5.526,
-      "upper_offset": 6.237,
-      "test_coverage_pct": 97.53
+      "lower_offset": -5.279,
+      "upper_offset": 6.528,
+      "test_coverage_pct": 97.76
     }
   }
 }

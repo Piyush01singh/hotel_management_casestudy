@@ -163,3 +163,17 @@ def test_modular_catalog_endpoints():
     assert res_rep.status_code == 200
     assert len(res_rep.json()["available_exports"]) >= 2
 
+def test_intelligence_and_local_explanation_endpoints():
+    res_intel = client.get("/api/datasets/intelligence")
+    assert res_intel.status_code == 200
+    intel = res_intel.json()
+    assert intel["summary"]["total_events"] > 1000
+    assert len(intel["dow_occupancy"]) == 7
+
+    res_local = client.get("/api/models/explain/sample")
+    assert res_local.status_code == 200
+    exp = res_local.json()
+    assert "typical_prediction_case" in exp
+    assert "high_error_case" in exp
+    assert len(exp["typical_prediction_case"]["shap_contributions_sorted"]) == 19
+

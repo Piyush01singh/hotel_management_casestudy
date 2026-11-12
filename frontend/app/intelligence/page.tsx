@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import { fetchBookingIntelligence } from "@/lib/api";
 import {
   Compass,
   Clock,
@@ -27,44 +28,32 @@ import {
   Cell
 } from "recharts";
 
-const LEAD_TIME_DATA = [
-  { range: "0–3 Days", percentage: 14.2, bookings: 9960 },
-  { range: "4–7 Days", percentage: 18.6, bookings: 13054 },
-  { range: "8–14 Days", percentage: 22.4, bookings: 15720 },
-  { range: "15–30 Days", percentage: 21.8, bookings: 15300 },
-  { range: "31–60 Days", percentage: 13.5, bookings: 9475 },
-  { range: "60+ Days", percentage: 9.5, bookings: 6678 },
-];
-
-const PICKUP_PACE_CURVE = [
-  { daysBefore: "60d", pickupSTD: 12, pickupDLX: 8, pickupSUI: 3, pickupEXE: 1 },
-  { daysBefore: "45d", pickupSTD: 22, pickupDLX: 14, pickupSUI: 6, pickupEXE: 2 },
-  { daysBefore: "30d", pickupSTD: 35, pickupDLX: 20, pickupSUI: 10, pickupEXE: 4 },
-  { daysBefore: "14d", pickupSTD: 48, pickupDLX: 28, pickupSUI: 14, pickupEXE: 6 },
-  { daysBefore: "7d",  pickupSTD: 62, pickupDLX: 35, pickupSUI: 18, pickupEXE: 8 },
-  { daysBefore: "3d",  pickupSTD: 68, pickupDLX: 38, pickupSUI: 19, pickupEXE: 9 },
-  { daysBefore: "0d",  pickupSTD: 70, pickupDLX: 40, pickupSUI: 20, pickupEXE: 10 },
-];
-
-const DOW_OCCUPANCY = [
-  { day: "Mon", rate: 64.2 },
-  { day: "Tue", rate: 67.8 },
-  { day: "Wed", rate: 68.5 },
-  { day: "Thu", rate: 73.1 },
-  { day: "Fri", rate: 84.6 },
-  { day: "Sat", rate: 88.2 },
-  { day: "Sun", rate: 61.4 },
-];
-
-const CANCELLATION_BY_LEAD = [
-  { leadWindow: "Last Minute (0-3d)", cancelRate: 6.8 },
-  { leadWindow: "Short (4-7d)", cancelRate: 11.4 },
-  { leadWindow: "Medium (8-14d)", cancelRate: 17.2 },
-  { leadWindow: "Standard (15-30d)", cancelRate: 24.5 },
-  { leadWindow: "Far Out (30d+)", cancelRate: 34.2 },
-];
-
 export default function BookingIntelligencePage() {
+  const [intelData, setIntelData] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadIntel() {
+      try {
+        const res = await fetchBookingIntelligence();
+        setIntelData(res);
+      } catch (err) {
+        console.error("Failed to load booking intelligence", err);
+      }
+    }
+    loadIntel();
+  }, []);
+
+  const summary = intelData?.summary || {
+    median_lead_time_days: 16.0,
+    overall_cancellation_rate_pct: 18.6,
+    total_events: 70187,
+    weekend_premium_pct: 22.8,
+  };
+  const LEAD_TIME_DATA = intelData?.lead_time_distribution || [];
+  const PICKUP_PACE_CURVE = intelData?.pickup_pace_curve || [];
+  const DOW_OCCUPANCY = intelData?.dow_occupancy || [];
+  const CANCELLATION_BY_LEAD = intelData?.cancellation_by_lead || [];
+
   return (
     <div className="flex-1 flex flex-col bg-navy-950">
       <Navbar
@@ -79,17 +68,17 @@ export default function BookingIntelligencePage() {
           <div className="bg-navy-900 border border-slate-800 rounded-xl p-5 stat-card-glow">
             <span className="text-xs font-medium text-slate-400">Median Lead Time</span>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-mono text-white">16.0</span>
+              <span className="text-3xl font-bold font-mono text-white">{summary.median_lead_time_days}</span>
               <span className="text-xs text-accent-teal">days to arrival</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">50% of bookings placed &le; 16 days out</p>
+            <p className="text-[11px] text-slate-400 mt-1">50% of bookings placed &le; {summary.median_lead_time_days} days out</p>
           </div>
 
           <div className="bg-navy-900 border border-slate-800 rounded-xl p-5 stat-card-glow">
             <span className="text-xs font-medium text-slate-400">Overall Cancellation Rate</span>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-mono text-white">18.4%</span>
-              <span className="text-xs text-slate-400">across 70k events</span>
+              <span className="text-3xl font-bold font-mono text-white">{summary.overall_cancellation_rate_pct}%</span>
+              <span className="text-xs text-slate-400">across {summary.total_events?.toLocaleString()} events</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">Normal full-service resort benchmark</p>
           </div>
@@ -97,7 +86,7 @@ export default function BookingIntelligencePage() {
           <div className="bg-navy-900 border border-slate-800 rounded-xl p-5 stat-card-glow">
             <span className="text-xs font-medium text-slate-400">Weekend Premium</span>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-mono text-accent-emerald">+19.6%</span>
+              <span className="text-3xl font-bold font-mono text-accent-emerald">+{summary.weekend_premium_pct}%</span>
               <span className="text-xs text-slate-400">vs mid-week</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">Fri &amp; Sat peak occupancy pace</p>

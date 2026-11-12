@@ -70,6 +70,14 @@ def get_model_explanations():
         "shap_attributions": shap_summary
     }
 
+@router.get("/explain/sample")
+def get_sample_prediction_explanation():
+    sample_exp_path = os.path.join(settings.ML_ARTIFACTS_DIR, "sample_prediction_explanation.json")
+    if os.path.exists(sample_exp_path):
+        with open(sample_exp_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"error": "Sample prediction explanation artifact not found"}
+
 @router.get("/test-predictions")
 def get_test_predictions_sample():
     sample_path = os.path.join(settings.ML_ARTIFACTS_DIR, "test_predictions_sample.json")

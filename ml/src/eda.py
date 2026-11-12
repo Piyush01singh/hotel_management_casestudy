@@ -72,7 +72,7 @@ def run_eda(base_dir: str, docs_dir: str):
     dow_occ = actuals_df.groupby("dow_label")["occupancy_rate"].mean().loc[dow_labels].round(2).to_dict()
 
     # Generate Markdown Report
-    report_md = f"""# Exploratory Data Analysis & Data Quality Report: StayWise AI
+    report_md = rf"""# Exploratory Data Analysis & Data Quality Report: StayWise AI
 
 **Report Generation Date:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
 **Evaluation Scope:** Grand Azure Resort & Spa (140 Keys)  
@@ -87,12 +87,12 @@ StayWise AI underwent an end-to-end data audit to establish provenance, verify s
 | Audit Dimension | Target / Standard | Observed Value | Validation Status |
 |---|---|---|---|
 | **Raw Booking Records** | $\ge 1,000$ | **{num_events:,}** | **PASSED** (70x rubric threshold) |
-| **Ground-Truth Actuals** | 600+ Stay Dates | **{num_actuals:,}** (4 categories $\\times$ 609 days) | **PASSED** |
+| **Ground-Truth Actuals** | 600+ Stay Dates | **{num_actuals:,}** (4 categories $\times$ 609 days) | **PASSED** |
 | **Daily Cutoff Snapshots** | 500+ Cutoff Days | **{num_snapshots:,}** point-in-time states | **PASSED** |
 | **Feature Matrix Records** | $\ge 10,000$ | **{num_features:,}** observation vectors | **PASSED** |
 | **Duplicate Booking IDs** | 0 | **{dup_bookings}** | **PASSED** |
 | **Missing Values (Features)**| 0% | **0.00%** across all 25 features | **PASSED** |
-| **Physical Capacity Violations**| 0 | **{capacity_violations}** ($y \le \\text{{Capacity}}$ strictly) | **PASSED** |
+| **Physical Capacity Violations**| 0 | **{capacity_violations}** ($y \le \text{{Capacity}}$ strictly) | **PASSED** |
 | **Negative Occupancies** | 0 | **{negative_actuals}** ($y \ge 0$ strictly) | **PASSED** |
 | **Temporal Cutoff Leakage** | 0 | **{leakage_violations}** (all stay dates $> t_0$) | **PASSED** |
 

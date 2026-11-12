@@ -18,3 +18,7 @@ def validate_dataset(db: Session = Depends(get_db)):
         "audits": summary["quality_audits"],
         "records_evaluated": summary["records"]
     }
+
+@router.get("/intelligence")
+def get_booking_intelligence(db: Session = Depends(get_db)):
+    return observatory_service.get_intelligence_stats(db)

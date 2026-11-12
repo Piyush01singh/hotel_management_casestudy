@@ -1,8 +1,8 @@
 # StayWise AI — Comprehensive Quality Assurance & Verification Test Report
 
-**Execution Date:** 2026-11-06  
-**Environment:** Windows Server / Powershell / Python 3.13.7 / Node.js 20.19.5  
-**Test Frameworks:** Pytest 9.2.0, HTTPX 0.28.1, Next.js Compiler 14.2.25, Playwright Chromium  
+**Execution Date:** 2026-11-12  
+**Environment:** Windows / PowerShell / Python 3.13.4 / Node.js / Next.js 14.2.25  
+**Test Frameworks:** Pytest 9.1.1, HTTPX, Next.js Compiler 14.2.25, Playwright  
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Test Suite / Category | Tests Executed | Passed | Failed | Status |
 |---|---|---|---|---|
-| **ML Pipeline & Leakage Unit Tests** | 4 | 4 | 0 | **PASSED (100%)** |
-| **FastAPI Integration Endpoints** | 10 | 10 | 0 | **PASSED (100%)** |
+| **ML Pipeline, Parity, PII & Leakage Unit Tests** | 8 | 8 | 0 | **PASSED (100%)** |
+| **FastAPI Integration Endpoints** | 14 | 14 | 0 | **PASSED (100%)** |
 | **Next.js Production Build** | 13 Routes | 13 | 0 | **PASSED (100%)** |
 | **Data Quality Audits** | 6 Checks | 6 | 0 | **PASSED (100%)** |
-| **Total Automated Tests** | **33 Checks** | **33** | **0** | **PASSED (100%)** |
+| **Total Automated Checks** | **41 Checks** | **41** | **0** | **PASSED (100%)** |
 
 ---
 
@@ -23,10 +23,18 @@
 - `test_model_artifacts_exist`: Validates serialization of `xgboost_model.joblib`, `ridge_model.joblib`, `preprocessor.joblib`, `model_metrics.json`, `uncertainty_intervals.json`, `feature_importance.json`, and `shap_summary.json`.
   - **Result:** PASSED.
 - `test_metrics_evaluation_criteria`: Asserts XGBoost MAE is strictly less than Seasonal-Naive baseline and WAPE &lt; 10%.
-  - **Result:** PASSED (XGBoost MAE: 1.318 vs Naive: 3.451; WAPE: 4.68% vs Naive: 12.25%).
+  - **Result:** PASSED (XGBoost MAE: 1.316 vs Naive: 3.451; WAPE: 4.67% vs Naive: 12.25%).
 - `test_uncertainty_quantiles_calibration`: Asserts lower quantile &lt; upper quantile across short (1–3d), medium (4–7d), and long (8–14d) horizons, with test coverage &ge; 70%.
-  - **Result:** PASSED (Coverage: Short=83.4%, Medium=81.6%, Long=78.9%).
+  - **Result:** PASSED (80% Coverage: Short=83.84%, Medium=80.91%, Long=82.04%).
 - `test_feature_matrix_leakage_guard`: Asserts non-negative occupancy, no physical capacity overflows, and stay date strictly greater than cutoff date everywhere.
+  - **Result:** PASSED.
+- `test_zero_future_leakage_invariance`: Perturbs future actuals strictly after $t_0$ and verifies all 19 engineered features remain bitwise identical.
+  - **Result:** PASSED.
+- `test_training_serving_parity`: Verifies FastAPI `ForecastService` reproduces offline feature-matrix predictions for historical cutoff `2024-04-15`.
+  - **Result:** PASSED.
+- `test_zero_pii_in_datasets`: Verifies zero PII columns (`name`, `email`, `phone`, `ssn`, `credit_card`, `address`, `passport`) exist in raw or processed CSVs.
+  - **Result:** PASSED.
+- `test_sample_prediction_shap_additivity`: Verifies local TreeSHAP contributions + base value match raw model output.
   - **Result:** PASSED.
 
 ---

@@ -1,5 +1,5 @@
 {
-  "trained_timestamp": "2026-11-06T14:57:43.574047",
+  "trained_timestamp": "2026-11-12T11:15:44.100894",
   "evaluation_period": {
     "train_start": "2023-03-02",
     "train_end": "2024-01-24",
@@ -25,17 +25,17 @@
       "wape": 6.61
     },
     "staywise_xgboost": {
-      "mae": 1.318,
-      "rmse": 1.939,
-      "wape": 4.68
+      "mae": 1.316,
+      "rmse": 1.937,
+      "wape": 4.67
     }
   },
   "by_room_category": {
     "STD": {
       "xgb": {
-        "mae": 1.97,
-        "rmse": 2.725,
-        "wape": 3.49
+        "mae": 1.954,
+        "rmse": 2.708,
+        "wape": 3.46
       },
       "ridge": {
         "mae": 3.198,
@@ -51,9 +51,9 @@
     },
     "DLX": {
       "xgb": {
-        "mae": 1.357,
-        "rmse": 1.98,
-        "wape": 4.07
+        "mae": 1.355,
+        "rmse": 1.976,
+        "wape": 4.06
       },
       "ridge": {
         "mae": 1.709,
@@ -69,9 +69,9 @@
     },
     "SUI": {
       "xgb": {
-        "mae": 1.187,
-        "rmse": 1.598,
-        "wape": 7.73
+        "mae": 1.189,
+        "rmse": 1.609,
+        "wape": 7.74
       },
       "ridge": {
         "mae": 1.295,
@@ -87,9 +87,9 @@
     },
     "EXE": {
       "xgb": {
-        "mae": 0.76,
-        "rmse": 1.067,
-        "wape": 10.29
+        "mae": 0.767,
+        "rmse": 1.089,
+        "wape": 10.37
       },
       "ridge": {
         "mae": 1.242,
@@ -108,7 +108,7 @@
     "1_7_days": {
       "xgb": {
         "mae": 0.974,
-        "rmse": 1.426,
+        "rmse": 1.434,
         "wape": 3.45
       },
       "ridge": {
@@ -124,9 +124,9 @@
     },
     "8_14_days": {
       "xgb": {
-        "mae": 1.641,
-        "rmse": 2.318,
-        "wape": 5.85
+        "mae": 1.637,
+        "rmse": 2.31,
+        "wape": 5.83
       },
       "ridge": {
         "mae": 2.165,

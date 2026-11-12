@@ -5,7 +5,7 @@ This checklist confirms verification against all criteria defined in Section 19 
 ---
 
 ## 1. Non-Negotiable Workspace & Governance Rules
-- [x] **Correct project directory used:** Workspace strictly located at `D:\piyush_aiproject`.
+- [x] **Correct project directory used:** Self-contained repository (`hotel_management_casestudy`) with relative paths and `pytest.ini`.
 - [x] **Competitor research documented:** Comprehensive benchmarking against Duetto, IDeaS G3, Atomize, Lighthouse, and top open-source projects in `docs/COMPETITOR_ANALYSIS.md`.
 - [x] **Dataset source and license documented:** Provenance and empirical alignment with Antonio, Almeida and Nunes (2019) documented in `docs/DATA_DICTIONARY.md` and `docs/EDA_REPORT.md`.
 - [x] **At least 1,000 records:** 70,187 raw booking events, 30,016 point-in-time snapshots, 2,436 daily actuals generated.
@@ -18,10 +18,10 @@ This checklist confirms verification against all criteria defined in Section 19 
 - [x] **Chronological train/validation/test split:** Partitioned strictly sequentially (60% Train, 20% Val, 20% Held-Out Test).
 - [x] **Seasonal naive baseline implemented:** Day-of-week lag benchmark evaluated on identical held-out test data.
 - [x] **Multiple candidate models compared:** Seasonal-Naive, Ridge Regression, and StayWise XGBoost Regressor.
-- [x] **Model comparison completed:** XGBoost achieves **MAE=1.318, RMSE=1.939, WAPE=4.68%** vs. Naive Baseline **MAE=3.451, RMSE=5.417, WAPE=12.25%** (61.8% error reduction).
+- [x] **Model comparison completed:** XGBoost achieves **MAE=1.316, RMSE=1.937, WAPE=4.67%** vs. Naive Baseline **MAE=3.451, RMSE=5.417, WAPE=12.25%** (61.9% relative WAPE reduction).
 - [x] **Error analysis by room category and horizon:** Documented in `docs/MODEL_CARD.md` and accessible via API.
-- [x] **Saved preprocessing and model artifacts:** Serialized in `ml/artifacts/` (`xgboost_model.joblib`, `ridge_model.joblib`, `preprocessor.joblib`, `model_metrics.json`, `uncertainty_intervals.json`).
-- [x] **Prediction uncertainty implemented & calibrated:** Empirical 80% and 95% quantile intervals calculated on validation residuals; empirical test coverage verified (83.4% short, 81.6% medium, 78.9% long).
+- [x] **Saved preprocessing and model artifacts:** Serialized in `ml/artifacts/` (`xgboost_model.joblib`, `ridge_model.joblib`, `preprocessor.joblib`, `model_metrics.json`, `uncertainty_intervals.json`, `sample_prediction_explanation.json`).
+- [x] **Prediction uncertainty implemented & calibrated:** Empirical 80% and 95% quantile intervals calculated on validation residuals; empirical 80% test coverage verified (83.84% short, 80.91% medium, 82.04% long).
 
 ---
 

@@ -3,7 +3,7 @@
 **Model Name:** StayWise XGBoost Forecaster v1.0  
 **Model Architecture:** Extreme Gradient Boosted Regression Trees (`xgboost.XGBRegressor`)  
 **Pipeline Preprocessing:** StandardScaler + Categorical One-Hot Encoders + Non-Linear Physical Capacity Clamping  
-**Date of Evaluation:** 2026-11-06T14:57:43.574047  
+**Date of Evaluation:** 2026-11-12T11:15:44.100894  
 **License:** Apache 2.0  
 
 ---
@@ -39,7 +39,7 @@ All models were evaluated on identical held-out test data (5,796 records):
 |---|---|---|---|---|
 | **Seasonal-Naive Baseline** | 3.451 | 5.417 | 12.25% | *Reference Baseline* |
 | **Ridge Regression** | 1.861 | 2.758 | 6.61% | **1.59 MAE reduction** |
-| **StayWise AI (XGBoost)** | **1.318** | **1.939** | **4.68%** | **61.8% relative error reduction** |
+| **StayWise AI (XGBoost)** | **1.316** | **1.937** | **4.67%** | **61.9% relative error reduction** |
 
 ---
 
@@ -47,10 +47,10 @@ All models were evaluated on identical held-out test data (5,796 records):
 
 | Room Category | Capacity | XGBoost MAE | XGBoost RMSE | XGBoost WAPE | Baseline WAPE |
 |---|---|---|---|---|---|
-| **Standard (STD)** | 70 | **1.97** | 2.725 | **3.49%** | 11.16% |
-| **Deluxe (DLX)** | 40 | **1.357** | 1.98 | **4.07%** | 9.99% |
-| **Suite (SUI)** | 20 | **1.187** | 1.598 | **7.73%** | 17.23% |
-| **Executive (EXE)** | 10 | **0.76** | 1.067 | **10.29%** | 20.51% |
+| **Standard (STD)** | 70 | **1.954** | 2.708 | **3.46%** | 11.16% |
+| **Deluxe (DLX)** | 40 | **1.355** | 1.976 | **4.06%** | 9.99% |
+| **Suite (SUI)** | 20 | **1.189** | 1.609 | **7.74%** | 17.23% |
+| **Executive (EXE)** | 10 | **0.767** | 1.089 | **10.37%** | 20.51% |
 
 ---
 
@@ -58,8 +58,8 @@ All models were evaluated on identical held-out test data (5,796 records):
 
 | Horizon Window | XGBoost MAE | XGBoost RMSE | XGBoost WAPE |
 |---|---|---|---|
-| **Short Horizon (1–7 Days Ahead)** | **0.974** | 1.426 | **3.45%** |
-| **Medium Horizon (8–14 Days Ahead)** | **1.641** | 2.318 | **5.85%** |
+| **Short Horizon (1–7 Days Ahead)** | **0.974** | 1.434 | **3.45%** |
+| **Medium Horizon (8–14 Days Ahead)** | **1.637** | 2.31 | **5.83%** |
 
 ---
 
@@ -69,33 +69,33 @@ Prediction bounds are calibrated on validation error residuals across stratified
 
 | Horizon Stratum | 80% Quantile Interval Offset | 80% Test Coverage | 95% Quantile Interval Offset | 95% Test Coverage |
 |---|---|---|---|---|
-| **Short (1–3 Days)** | [-1.216, +1.129] | **82.57%** | [-2.277, +2.321] | **95.83%** |
-| **Medium (4–7 Days)** | [-1.862, +2.309] | **81.16%** | [-4.121, +4.254] | **97.41%** |
-| **Long (8–14 Days)** | [-2.579, +3.479] | **82.84%** | [-5.526, +6.237] | **97.53%** |
+| **Short (1–3 Days)** | [-1.229, +1.141] | **83.84%** | [-2.244, +2.119] | **94.22%** |
+| **Medium (4–7 Days)** | [-1.895, +2.239] | **80.91%** | [-4.159, +4.056] | **96.67%** |
+| **Long (8–14 Days)** | [-2.569, +3.474] | **82.04%** | [-5.279, +6.528] | **97.76%** |
 
 ---
 
 ## 7. Model Explainability: Top Feature Importances & SHAP
 
 ### Top Feature Importances (Gain Weight)
-- **`otb_rooms`**: 76.3%
-- **`hist_same_dow_lag`**: 9.2%
-- **`category_EXE`**: 3.1%
+- **`otb_rooms`**: 79.2%
+- **`hist_same_dow_lag`**: 9.1%
+- **`hist_rolling_mean_7d`**: 3.2%
 - **`lead_time`**: 2.5%
-- **`hist_rolling_mean_7d`**: 2.4%
 - **`hist_rolling_mean_28d`**: 1.7%
-- **`room_capacity`**: 1.3%
-- **`event_impact_score`**: 0.7%
+- **`room_capacity`**: 0.7%
+- **`event_impact_score`**: 0.6%
+- **`otb_occupancy_ratio`**: 0.6%
 
 ### Top TreeSHAP Global Mean (|SHAP| Attributions)
-- **`otb_rooms`**: 12.856 rooms impact
-- **`lead_time`**: 1.727 rooms impact
-- **`hist_rolling_mean_28d`**: 1.631 rooms impact
-- **`hist_same_dow_lag`**: 1.482 rooms impact
-- **`hist_rolling_mean_7d`**: 0.590 rooms impact
-- **`day_of_week`**: 0.571 rooms impact
-- **`month`**: 0.402 rooms impact
-- **`is_weekend`**: 0.402 rooms impact
+- **`otb_rooms`**: 12.858 rooms impact
+- **`lead_time`**: 1.733 rooms impact
+- **`hist_rolling_mean_28d`**: 1.623 rooms impact
+- **`hist_same_dow_lag`**: 1.381 rooms impact
+- **`hist_rolling_mean_7d`**: 0.704 rooms impact
+- **`day_of_week`**: 0.512 rooms impact
+- **`month`**: 0.397 rooms impact
+- **`is_weekend`**: 0.382 rooms impact
 
 ---
 
